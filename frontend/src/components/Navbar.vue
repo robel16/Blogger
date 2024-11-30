@@ -16,7 +16,7 @@ const toggleSearch = () => {
           <h1 class="text-2xl font-bold text-gray-800">Blogger</h1>
         </div>
 
-        <!-- Search bar (visible on medium and larger screens) -->
+        <!-- Search bar mefium and large -->
         <div class="hidden md:block flex-1 max-w-md mx-4">
           <div class="relative">
             <div
@@ -34,7 +34,6 @@ const toggleSearch = () => {
 
         <!-- Right: Actions -->
         <div class="flex items-center space-x-4">
-          <!-- Toggle search for small screens -->
           <button
             @click="toggleSearch"
             class="block md:hidden text-gray-700 hover:text-gray-900 bg-gray-400 rounded-md"
