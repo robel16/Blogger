@@ -1,2 +1,8 @@
-<script setup></script>
-<template><h1 class="text-red-600">hello world</h1></template>
+<script setup>
+import Navbar from "./components/Navbar.vue";
+import { RouterView } from "vue-router";
+</script>
+<template>
+  <Navbar />
+  <router-view/> 
+</template>
