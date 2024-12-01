@@ -1,4 +1,4 @@
-<script>
+<!-- <script>
 import Input from './Input.vue'
 
 export default {
@@ -91,4 +91,4 @@ export default {
     </div>
   </div>
 </template>
-
+ -->
