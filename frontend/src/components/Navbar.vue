@@ -1,7 +1,38 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { auth } from '../firebase/config';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const showSearch = ref(false);
+const user = ref(null);
+const showUserMenu = ref(false);
+const userImage = ref('');
+const userName = ref('');
+
+onMounted(() => {
+  auth.onAuthStateChanged((currentUser) => {
+    user.value = currentUser;
+    if (currentUser) {
+      userImage.value = currentUser.photoURL || 
+        localStorage.getItem('userImage') || 
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName)}`;
+      userName.value = currentUser.displayName || localStorage.getItem('userName');
+    }
+  });
+});
+
+const handleLogout = async () => {
+  try {
+    await signOut(auth);
+    localStorage.clear();
+    router.push('/');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+};
+
 const toggleSearch = () => {
   showSearch.value = !showSearch.value;
 };
@@ -16,12 +47,10 @@ const toggleSearch = () => {
           <h1 class="text-2xl font-bold text-gray-800">Blogger</h1>
         </div>
 
-        <!-- Search bar mefium and large -->
+        <!-- Search bar -->
         <div class="hidden md:block flex-1 max-w-md mx-4">
           <div class="relative">
-            <div
-              class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-            >
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fi fi-rr-search text-gray-400"></i>
             </div>
             <input
@@ -32,15 +61,62 @@ const toggleSearch = () => {
           </div>
         </div>
 
-        <!-- Right: Actions -->
+        <!-- Right side actions -->
         <div class="flex items-center space-x-4">
           <button
             @click="toggleSearch"
-            class="block md:hidden text-gray-700 hover:text-gray-900 bg-gray-400 rounded-md"
+            class="block md:hidden text-gray-700 hover:text-gray-900"
           >
             <i class="fi fi-rr-search text-lg"></i>
           </button>
+
+          <!-- Show these when user is logged in -->
+          <template v-if="user">
+            <button class="text-gray-700 hover:text-gray-900">
+              <i class="fi fi-rr-bell text-lg"></i>
+            </button>
+            
+            <div class="relative">
+              <button 
+                @click="showUserMenu = !showUserMenu"
+                class="flex items-center space-x-2"
+              >
+                <img 
+                  :src="userImage"
+                  :alt="userName"
+                  class="w-8 h-8 rounded-full object-cover border border-gray-200"
+                  @error="userImage = '/default-avatar.png'"
+                />
+              </button>
+
+              <!-- Dropdown menu -->
+              <div 
+                v-if="showUserMenu"
+                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+              >
+                <div class="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                  Signed in as <br>
+                  <strong>{{ userName }}</strong>
+                </div>
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Profile
+                </a>
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  Settings
+                </a>
+                <button 
+                  @click="handleLogout"
+                  class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- Show this when user is not logged in -->
           <router-link
+            v-else
             to="/signup"
             class="bg-black hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
           >
@@ -50,14 +126,13 @@ const toggleSearch = () => {
       </div>
     </div>
 
+    <!-- Mobile search -->
     <div
       v-if="showSearch"
       class="md:hidden px-4 py-2 bg-gray-100 border-t border-gray-200"
     >
       <div class="relative">
-        <div
-          class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-        >
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <i class="fi fi-rr-search text-gray-400"></i>
         </div>
         <input
