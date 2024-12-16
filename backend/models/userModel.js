@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 // User schema definition
 const userSchema = new mongoose.Schema(
@@ -9,6 +9,13 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    name:{
+      type:String,
+      required:false
+    },
+    avatar:{
+      type:String,
+    },
     email: {
       type: String,
       required: true,
@@ -16,17 +23,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: function() {
-        return !this.isGoogleUser;
-      }
-    },
-    profilePicture: {
-      type: String,
-      default: null
-    },
-    isGoogleUser: {
-      type: Boolean,
-      default: false
+      required: true,
     },
     posts: [
       {
@@ -39,13 +36,17 @@ const userSchema = new mongoose.Schema(
       enum: ["User", "Editor"],
       default: "User",
     },
+    totalPosts: {
+      type: Number,
+      default: 0, // Field to track the number of posts
+    },
   },
   { timestamps: true }
 );
 
 // Middleware to hash password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password") || this.isGoogleUser) return next();
+  if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -54,6 +55,13 @@ userSchema.pre("save", async function (next) {
 // Method to compare the entered password with the stored hashed password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Method to update the totalPosts count
+userSchema.methods.updateTotalPosts = async function () {
+  // Increment the totalPosts field whenever a new post is created
+  this.totalPosts += 1;
+  await this.save();
 };
 
 // Export the User model

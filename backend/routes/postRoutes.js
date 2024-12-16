@@ -11,7 +11,8 @@ router.post("/", protect, postController.createAPost);
 
 // Route to get all published posts
 router.get("/", postController.getAllPublishedPosts);
-
+//user post route
+router.get("/user/posts", protect, postController.getUserPosts);
 // Route to get a single published post by ID
 router.get("/:postId", postController.getASinglePublishedPost);
 
