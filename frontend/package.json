@@ -9,9 +9,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@editorjs/checklist": "^1.6.0",
+    "@editorjs/code": "^2.9.3",
+    "@editorjs/editorjs": "^2.30.7",
+    "@editorjs/embed": "^2.7.6",
+    "@editorjs/header": "^2.8.8",
+    "@editorjs/image": "^2.10.1",
+    "@editorjs/link": "^2.6.2",
+    "@editorjs/list": "^2.0.2",
+    "@editorjs/marker": "^1.4.0",
+    "@editorjs/quote": "^2.7.4",
+    "@editorjs/table": "^2.4.2",
+    "@editorjs/warning": "^1.4.1",
     "@flaticon/flaticon-uicons": "^3.3.1",
     "axios": "^1.7.8",
+    "date-fns": "^4.1.0",
     "firebase": "^11.0.2",
+    "lodash.debounce": "^4.0.8",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vue3-google-oauth2": "^1.0.7"
