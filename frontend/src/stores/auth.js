@@ -52,6 +52,18 @@ export const useAuthStore = () => {
     window.location.href = '/signup';
   };
 
+  const initializeAuth = () => {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (token && user) {
+      state.token = token;
+      state.user = user;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  };
+
+  initializeAuth();
+
   return {
     token: computed(() => getToken()),
     user: computed(() => state.user),
