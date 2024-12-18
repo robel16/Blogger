@@ -217,3 +217,27 @@ exports.updatePost = async (req, res) => {
      });
    }
  };
+
+// Get all posts
+const getPosts = async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate('author', 'username avatar')
+      .sort({ createdAt: -1 });
+    
+    console.log('Found posts:', posts.length); // Debug log
+    
+    res.json({
+      success: true,
+      data: {
+        posts
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

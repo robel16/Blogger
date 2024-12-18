@@ -1,21 +1,18 @@
 // backend/routes/commentRoutes.js
 const express = require("express");
 const {
+  getComments,
   createComment,
-  editComment,
+  updateComment,
   deleteComment,
 } = require("../controllers/commentController");
 const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// Ensure this function is defined
-const updateComment = (req, res) => {
-};
-
-
-router.post("/", protect, createComment); // Create a comment
-router.put("/:commentId", protect, updateComment); // Edit a comment
-router.delete("/:commentId", protect, deleteComment); // Delete a comment
+router.get("/post/:postId", getComments);
+router.post("/post/:postId", protect, createComment);
+router.put("/:commentId", protect, updateComment);
+router.delete("/:commentId", protect, deleteComment);
 
 module.exports = router;

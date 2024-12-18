@@ -26,7 +26,7 @@ const generateToken = (id, role) => {
       const user = await User.create({
         username,
         email,
-        password: hashedPassword, // Save hashed password
+        password: hashedPassword,
         role,
       });
 
@@ -49,35 +49,29 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
-      console.error("Login attempt with non-existent email:", email);
-      return res
-        .status(401)
-        .json({ message: "Invalid credentials: User does not exist" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Compare the entered password with the stored hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.error("Password mismatch for user:", email);
-      return res
-        .status(401)
-        .json({ message: "Invalid credentials: Incorrect password" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Generate token and respond
+    // Generate token
     const token = generateToken(user._id, user.role);
+    console.log('Generated token:', token); // Debug log
+
     return res.status(200).json({
       _id: user._id,
       username: user.username,
       email: user.email,
       role: user.role,
-      token,
+      token: `Bearer ${token}` // Always include 'Bearer'
     });
   } catch (error) {
-    console.error("Login error:", error.message);
+    console.error("Login error:", error);
     res.status(500).json({ message: error.message });
   }
 };
