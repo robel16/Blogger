@@ -89,7 +89,9 @@ const submitComment = async () => {
   if (!newComment.value.trim()) return;
 
   const token = localStorage.getItem('token');
-  if (!token) {
+  const currentUser = auth.user;
+
+  if (!token || !currentUser) {
     showNotification('Please sign in to comment');
     window.location.href = '/signup';
     return;
@@ -97,14 +99,11 @@ const submitComment = async () => {
 
   try {
     const postId = props.article.blog_id;
-    const commentData = { text: newComment.value.trim() };
+    const commentData = { 
+      text: newComment.value.trim(),
+      author: currentUser._id
+    };
     
-    console.log('Submitting comment:', {
-      ...commentData,
-      postId,
-      token: `Bearer ${token}`
-    });
-
     const response = await axios.post(
       `http://localhost:5000/api/comments/post/${postId}`,
       commentData,
@@ -116,8 +115,17 @@ const submitComment = async () => {
       }
     );
     
-    console.log('Comment submitted:', response.data);
-    comments.value.unshift(response.data);
+    // Add the author info to the new comment before adding to the list
+    const newCommentWithAuthor = {
+      ...response.data,
+      author: {
+        _id: currentUser._id,
+        username: currentUser.username,
+        avatar: currentUser.avatar
+      }
+    };
+    
+    comments.value.unshift(newCommentWithAuthor);
     newComment.value = '';
     
     if (props.article.activity) {
@@ -125,18 +133,13 @@ const submitComment = async () => {
     }
   } catch (error) {
     console.error('Error posting comment:', error);
-    if (error.response?.status === 401) {
-      showNotification('Your session has expired. Please sign in again.');
-      auth.logout();
-    } else {
-      const errorMessage = error.response?.data?.message || 'Failed to post comment';
-      console.error('Error details:', error.response?.data);
-      showNotification(errorMessage);
-    }
+    const errorMessage = error.response?.data?.message || 'Failed to post comment';
+    showNotification(errorMessage);
   }
 };
 
 const startEdit = (comment) => {
+  console.log('Starting edit for comment:', comment);
   editingComment.value = comment._id;
   editText.value = comment.text;
 };
@@ -147,77 +150,108 @@ const cancelEdit = () => {
 };
 
 const updateComment = async (commentId) => {
+  if (!editText.value.trim()) return;
+
+  const token = localStorage.getItem('token');
+  const currentUser = auth.user;
+
+  if (!token || !currentUser) {
+    showNotification('Please sign in to continue');
+    window.location.href = '/signup';
+    return;
+  }
+
   try {
-    const token = auth.token;
-    if (!token) {
-      showNotification('Please sign in to continue');
-      window.location.href = '/signup';
-      return;
-    }
+    console.log('Updating comment:', commentId, editText.value);
+    
     const response = await axios.put(
       `http://localhost:5000/api/comments/${commentId}`,
-      { text: editText.value },
+      { text: editText.value.trim() },
       {
         headers: {
-          'Authorization': token,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       }
     );
     
+    // Preserve the author information when updating the comment
+    const updatedComment = {
+      ...response.data,
+      author: {
+        _id: currentUser._id,
+        username: currentUser.username,
+        avatar: currentUser.avatar
+      }
+    };
+    
+    // Update the comment in the list
     const index = comments.value.findIndex(c => c._id === commentId);
     if (index !== -1) {
-      comments.value[index] = response.data;
+      comments.value[index] = updatedComment;
     }
     
     cancelEdit();
+    showNotification('Comment updated successfully');
   } catch (error) {
-    if (error.response?.status === 401) {
-      showNotification('Your session has expired. Please sign in again.');
-      auth.logout();
-    } else {
-      showNotification('Failed to update comment');
-    }
+    console.error('Error updating comment:', error);
+    const errorMessage = error.response?.data?.message || 'Failed to update comment';
+    showNotification(errorMessage);
   }
 };
 
 const deleteComment = async (commentId) => {
   if (!confirm('Are you sure you want to delete this comment?')) return;
-  
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    showNotification('Please sign in to continue');
+    window.location.href = '/signup';
+    return;
+  }
+
   try {
-    const token = auth.token;
-    if (!token) {
-      showNotification('Please sign in to continue');
-      window.location.href = '/signup';
-      return;
-    }
+    console.log('Deleting comment:', commentId);
+    
     await axios.delete(
       `http://localhost:5000/api/comments/${commentId}`,
       {
         headers: {
-          'Authorization': token
+          'Authorization': `Bearer ${token}`
         }
       }
     );
     
+    // Remove the comment from the list
     comments.value = comments.value.filter(c => c._id !== commentId);
     
+    // Update the comment count
     if (props.article.activity) {
       props.article.activity.total_comments -= 1;
     }
+    
+    showNotification('Comment deleted successfully');
   } catch (error) {
-    if (error.response?.status === 401) {
-      showNotification('Your session has expired. Please sign in again.');
-      auth.logout();
-    } else {
-      showNotification('Failed to delete comment');
-    }
+    console.error('Error deleting comment:', error);
+    const errorMessage = error.response?.data?.message || 'Failed to delete comment';
+    showNotification(errorMessage);
   }
 };
 
 const isCommentOwner = (comment) => {
-  if (!auth.currentUser || !comment.author) return false;
-  return auth.currentUser._id === comment.author._id;
+  const currentUser = auth.user;
+  console.log('Checking ownership:', { 
+    currentUser: currentUser?._id, 
+    commentAuthor: comment.author?._id 
+  });
+  
+  if (!currentUser || !comment.author) {
+    return false;
+  }
+
+  const isOwner = currentUser._id === comment.author._id;
+  console.log('Is owner:', isOwner);
+  return isOwner;
 };
 </script>
 
@@ -338,7 +372,7 @@ const isCommentOwner = (comment) => {
 
         <!-- Comments -->
         <div v-if="comments.length > 0">
-          <div v-for="comment in comments" :key="comment._id" class="border-b border-gray-100 pb-4">
+          <div v-for="comment in comments" :key="comment._id" class="border-b border-gray-100 pb-4 mb-4">
             <div class="flex items-start gap-3">
               <img 
                 :src="comment.author?.avatar || '../assets/images/default-avatar.png'" 
@@ -351,9 +385,10 @@ const isCommentOwner = (comment) => {
                     <span class="font-medium">{{ comment.author?.username }}</span>
                     <span class="text-sm text-gray-500">{{ formatDate(comment.createdAt) }}</span>
                   </div>
-                  <!-- Edit/Delete buttons - Only show for comment owner -->
+                  <!-- Edit/Delete buttons -->
                   <div v-if="isCommentOwner(comment)" class="flex items-center gap-2">
                     <button 
+                      v-if="editingComment !== comment._id"
                       @click="startEdit(comment)"
                       class="text-gray-500 hover:text-gray-700 text-sm"
                     >
@@ -367,9 +402,32 @@ const isCommentOwner = (comment) => {
                     </button>
                   </div>
                 </div>
-                
-                <!-- Comment text -->
-                <p class="text-gray-700 mt-1">{{ comment.text }}</p>
+
+                <!-- Edit form -->
+                <div v-if="editingComment === comment._id" class="mt-2">
+                  <textarea
+                    v-model="editText"
+                    class="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    rows="2"
+                  ></textarea>
+                  <div class="flex justify-end gap-2 mt-2">
+                    <button 
+                      @click="cancelEdit"
+                      class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      @click="updateComment(comment._id)"
+                      class="px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Comment text (when not editing) -->
+                <p v-else class="text-gray-700 mt-1">{{ comment.text }}</p>
               </div>
             </div>
           </div>
