@@ -26,43 +26,11 @@
             </div>
 
             <template v-else>
-              <article v-for="article in articles" :key="article._id" class="flex flex-col md:flex-row gap-6">
-                <div class="flex-1">
-                  <div class="flex items-center space-x-2 mb-2">
-                    <img 
-                      :src="defaultAvatar" 
-                      alt="Author"
-                      class="w-8 h-8 rounded-full object-cover"
-                    />
-                    <span class="text-sm">{{ article.author.username }} @ {{ formatDate(article.publishedAt) }}</span>
-                  </div>
-                  <h2 class="text-xl font-bold mb-2 hover:underline">
-                    <router-link :to="`/post/${article._id}`">{{ article.title }}</router-link>
-                  </h2>
-                  <p class="text-gray-600 mb-4">{{ article.description }}</p>
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                      <div class="flex flex-wrap gap-2">
-                        <span v-for="tag in article.tags" :key="tag" class="px-2 py-1 bg-gray-100 rounded-full text-sm">
-                          {{ tag }}
-                        </span>
-                      </div>
-                      <div class="flex items-center space-x-1 text-gray-500">
-                        <i class="bx bx-heart"></i>
-                        <span>{{ article.activity?.total_likes || 0 }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="md:w-48 h-32">
-                  <img 
-                    :src="article.banner || defaultPostImage"
-                    :alt="article.title" 
-                    class="w-full h-full object-cover rounded"
-                    @error="e => e.target.src = defaultPostImage"
-                  />
-                </div>
-              </article>
+              <ArticleCard
+                v-for="article in articles"
+                :key="article._id"
+                :article="article"
+              />
             </template>
           </div>
         </div>
@@ -122,6 +90,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Navigation from '../components/Navbar.vue'; // Import the Navbar component
+import ArticleCard from '../components/ArticleCard.vue'; // Add this import
 
 const articles = ref([]);
 const isLoading = ref(true);

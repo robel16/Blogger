@@ -8,29 +8,26 @@ const postSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: true,
-    trim: true
-  },
-  banner: {
-    type: String,
-    default: null
+    required: true
   },
   description: {
     type: String,
-    max_length: 200
-  },
-  content: {
-    type: Object,
     required: true
   },
-  tags: [{
-    type: String,
-    trim: true
-  }],
+  content: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true
+  },
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  tags: [{
+    type: String
+  }],
+  banner: {
+    type: String
   },
   activity: {
     total_likes: {
@@ -40,37 +37,18 @@ const postSchema = new mongoose.Schema({
     total_comments: {
       type: Number,
       default: 0
-    },
-    total_reads: {
-      type: Number,
-      default: 0
-    },
-    total_parent_comments: {
-      type: Number,
-      default: 0
     }
   },
   comments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Comment'
   }],
-  draft: {
-    type: Boolean,
-    default: false
+  publishedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
-  timestamps: {
-    createdAt: 'publishedAt'
-  }
-});
-
-// Update user's activity 
-postSchema.post('save', async function() {
-  const User = mongoose.model('User');
-  const user = await User.findById(this.author);
-  if (user) {
-    await user.updateTotalPosts();
-  }
+  timestamps: true
 });
 
 module.exports = mongoose.model('Post', postSchema);

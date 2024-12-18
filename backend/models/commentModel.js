@@ -1,25 +1,38 @@
 // models/Comment.js
 const mongoose = require("mongoose");
 
-const CommentSchema = new mongoose.Schema(
+const commentSchema = new mongoose.Schema(
   {
     text: {
       type: String,
-      required: [true, "Comment cannot be empty"],
+      required: [true, "Comment text is required"],
+      trim: true
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: true
     },
     post: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Post",
+      type: String,
       required: true,
-    },
+      index: true
+    }
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
-const Comment = mongoose.model("Comment", CommentSchema);
-module.exports = Comment;
+commentSchema.pre('save', function(next) {
+  console.log('Saving comment:', {
+    text: this.text,
+    author: this.author,
+    post: this.post
+  });
+  next();
+});
+
+module.exports = mongoose.model("Comment", commentSchema);
